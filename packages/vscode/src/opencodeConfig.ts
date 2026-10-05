@@ -16,6 +16,8 @@ import {
   type ParseError,
 } from 'jsonc-parser';
 import { resolveNpmRegistryRequest } from '../../web/server/lib/opencode/npm-registry-config.js';
+import { z } from 'zod';
+import { createReferenceConfigManager } from '../../web/server/lib/opencode/reference-config.js';
 import {
   toAgentEntity,
   fromAgentEntity,
@@ -3388,6 +3390,12 @@ const isManagedSkillPath = (skillMdPath: string, workingDirectory?: string): boo
 };
 
 export { isManagedSkillPath };
+
+export const referenceConfigManager = createReferenceConfigManager({
+  configDirectory: OPENCODE_CONFIG_DIR,
+  readConfigFile: (file) => z.record(z.string(), z.json()).parse(readConfigFile(file)),
+  writeConfig,
+});
 
 export const renameSkill = (oldName: string, newName: string, workingDirectory?: string): void => {
   ensureSkillDirs();

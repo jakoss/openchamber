@@ -3,7 +3,9 @@ import { guestIntegrationsI18n } from './guest-integrations.i18n';
 import { linearIntegrationI18n } from './linear-integration.i18n';
 import { thirdPartyIntegrationI18n } from './third-party-integrations.i18n';
 import { extensionCatalogI18n } from './extension-catalog.i18n';
+import { referencesSettingsI18n } from './references.settings.i18n';
 export const settingsDict = {
+  ...referencesSettingsI18n['pt-BR'],
   'settings.sourceControl.ssh.title': 'Chaves SSH',
   'settings.sourceControl.ssh.load': 'Mostrar chaves',
   'settings.sourceControl.ssh.discover': 'Procurar chaves em ~/.ssh',

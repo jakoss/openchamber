@@ -15,6 +15,7 @@ export type SettingsPageSlug =
   | 'commands'
   | 'mcp'
   | 'plugins'
+  | 'references'
   | 'skills.installed'
   | 'skills.catalog'
   | 'git'
@@ -63,6 +64,7 @@ export interface SettingsPageMeta {
 }
 
 export const SETTINGS_PAGE_METADATA: readonly SettingsPageMeta[] = [
+  { slug: 'references', title: 'References', group: 'opencode', kind: 'single', keywords: ['reference', 'alias', 'context', 'repository', 'directory'] },
   {
     slug: 'home',
     title: 'Settings',
@@ -327,6 +329,8 @@ export function getSettingsNavIcon(slug: SettingsPageSlug): IconName | null {
       return null;
     case 'plugins':
       return 'plug-2';
+    case 'references':
+      return 'folder';
 
     case 'skills.installed':
       return 'book-open';

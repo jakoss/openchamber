@@ -11,6 +11,23 @@ import {
 const names = (text: string) => scanMentions(text).map((token) => token.name);
 const raws = (text: string) => scanMentions(text).map((token) => token.raw);
 
+describe('reference root classification', () => {
+    const classifier = {
+        knownAgentNames: new Set(['build']),
+        knownReferenceNames: new Set(['docs', 'build', 'hidden-guide']),
+        confirmedMentions: new Set<string>(),
+    };
+    test('recognizes root aliases without a path separator or picker confirmation', () => {
+        expect(classifyMention('docs', classifier)).toBe('file');
+        expect(classifyMention('hidden-guide', classifier)).toBe('file');
+        expect(classifyMention('unknown', classifier)).toBeNull();
+    });
+    test('keeps agent precedence and does not invent reference subpath search', () => {
+        expect(classifyMention('build', classifier)).toBe('agent');
+        expect(names('email me@docs')).toEqual([]);
+    });
+});
+
 describe('scanMentions — boundaries', () => {
     test('a mention at the start of the text', () => {
         expect(names('@build do this')).toEqual(['build']);

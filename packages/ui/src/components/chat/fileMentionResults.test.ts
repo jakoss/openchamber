@@ -5,7 +5,55 @@ import {
   mentionServerQuery,
   rankFileMentionResults,
   tokenizeMentionQuery,
+  resolveReferenceMention,
+  listReferenceMentionHits,
 } from './fileMentionResults';
+
+const references = [{ name: 'opencode', path: 'H:\\external\\opencode', hidden: false, source: { type: 'local' as const, path: 'H:\\external\\opencode' } }];
+
+describe('reference subpaths', () => {
+  test('resolves roots and nested file mentions against the reference, not the project', () => {
+    expect(resolveReferenceMention('opencode', references)?.serverPath).toBe('H:/external/opencode');
+    expect(resolveReferenceMention('opencode/services/README.md', references)?.serverPath).toBe('H:/external/opencode/services/README.md');
+    expect(resolveReferenceMention('opencode-other/README.md', references)).toBeNull();
+    expect(resolveReferenceMention('opencode/../secret', references)).toBeNull();
+    expect(resolveReferenceMention('opencode/C:/secret', references)).toBeNull();
+  });
+
+  test('lists only the requested reference directory and inserts alias-qualified paths', async () => {
+    const requests: string[] = [];
+    const hits = await listReferenceMentionHits('opencode/services/READ', references, {
+      async listDirectory(path) {
+        requests.push(path);
+        return { directory: path, entries: [
+          { name: 'README.md', path: `${path}README.md`, isDirectory: false },
+          { name: '.README', path: `${path}.README`, isDirectory: false },
+        ] };
+      },
+    }, { includeHidden: false, respectGitignore: true });
+    expect(requests).toEqual(['H:/external/opencode/services/']);
+    expect(hits.map((entry) => entry.relativePath)).toEqual(['opencode/services/README.md']);
+    expect(hits[0].path).toBe('H:/external/opencode/services/README.md');
+  });
+
+  test('offers directories at the alias root, including explicitly typed hidden aliases', async () => {
+    const hits = await listReferenceMentionHits('opencode/', references.map((entry) => ({ ...entry, hidden: true })), {
+      async listDirectory(path) {
+        return { directory: path, entries: [{ name: 'services', path: `${path}services`, isDirectory: true }] };
+      },
+    }, { includeHidden: false, respectGitignore: false });
+    expect(hits[0].relativePath).toBe('opencode/services/');
+    expect(hits[0].kind).toBe('directory');
+  });
+
+  test('does not read outside the reference for traversal and propagates listing failures', async () => {
+    let reads = 0;
+    const files = { async listDirectory(): Promise<never> { reads++; throw new Error('offline'); } };
+    expect(await listReferenceMentionHits('opencode/../', references, files, { includeHidden: false, respectGitignore: true })).toEqual([]);
+    expect(reads).toBe(0);
+    await expect(listReferenceMentionHits('opencode/', references, files, { includeHidden: false, respectGitignore: true })).rejects.toThrow('offline');
+  });
+});
 
 const hit = (relativePath: string) => {
   const name = relativePath.split('/').filter(Boolean).pop() ?? relativePath;

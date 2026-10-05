@@ -31,6 +31,8 @@ interface SettingsSearchAvailabilityContext extends SettingsRuntimeContext {
 }
 
 const SETTINGS_SEARCH_ITEMS: readonly SettingsSearchItem[] = [
+  { id: 'references.scope', page: 'references', titleKey: 'settings.references.scope', keywords: ['global', 'project', 'reference'] },
+  { id: 'references.manage', page: 'references', titleKey: 'settings.page.references.title', descriptionKey: 'settings.page.references.description', keywords: ['add', 'alias', 'directory', 'repository', 'context'] },
   {
     id: 'chat.activity-default',
     page: 'chat',

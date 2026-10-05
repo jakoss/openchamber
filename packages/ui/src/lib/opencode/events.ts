@@ -90,6 +90,7 @@ export type CatalogKind =
   | "command"
   | "skill"
   | "plugin"
+  | "reference"
   | "provider"
   | "model"
   | "credential"
@@ -809,6 +810,8 @@ export function translateWireEvent(event: OpenCodeEvent): SyncEvent[] {
       return [{ type: "catalog.updated", properties: { kind: "skill" } }]
     case "plugin.updated":
       return [{ type: "catalog.updated", properties: { kind: "plugin" } }]
+    case "reference.updated":
+      return [{ type: "catalog.updated", properties: { kind: "reference" } }]
     case "credential.updated":
     case "credential.switched":
       return [{ type: "catalog.updated", properties: { kind: "credential" } }]
@@ -843,7 +846,6 @@ export function translateWireEvent(event: OpenCodeEvent): SyncEvent[] {
       return []
     // Catalogs OpenChamber does not surface as lists of their own.
     case "models-dev.refreshed":
-    case "reference.updated":
       return []
     // Resources of an MCP server; OpenChamber shows connection status only
     // (`mcp.status.changed`).

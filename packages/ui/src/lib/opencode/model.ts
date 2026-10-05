@@ -14,6 +14,14 @@
  * it grows without a lookup by position.
  */
 
+export interface Reference {
+  name: string;
+  path: string;
+  description?: string;
+  hidden?: boolean;
+  source: { type: 'local'; path: string } | { type: 'git'; repository: string; branch?: string };
+}
+
 import type {
   AgentInfo,
   CommandInfo,

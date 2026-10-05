@@ -65,6 +65,18 @@ on disk. Once the entity exists, the page switches to the autosave rules above.
 `skills/` follows the same split for supporting files: editing an existing file
 writes when the dialog closes, while a new file is only created on confirm.
 
+## References
+
+`references/` edits stored project or global reference entries through
+`lib/api/references.ts`. The connected host owns configuration files and
+directory browsing on every runtime. Explicit configuration entries are
+read-only. Creating remains a local draft until Create; existing entries use
+the shared autosave hook. A refresh preserves a dirty form and its saved
+baseline. Runtime, directory and scope changes remount the page; old requests
+cannot hydrate the new selection. Delete removes only the named config entry,
+never a directory or Git checkout. Availability uses local directory checks
+and OpenCode's resolved reference list, not invented clone-progress state.
+
 ## Providers
 
 `providers/` is not an autosave page. Connecting a provider is an action, not a

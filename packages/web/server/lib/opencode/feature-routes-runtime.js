@@ -21,6 +21,7 @@ import { registerPermissionAutoAcceptRoutes } from '../permission-auto-accept/ru
 import { registerMessageQueueRoutes } from '../message-queue/runtime.js';
 import { registerRoutingPromptRewrite, registerRoutingRoutes } from '../routing/routes.js';
 import { registerConfigEntityRoutes } from './config-entity-routes.js';
+import { registerReferenceRoutes } from './reference-routes.js';
 import { registerSettingsUtilityRoutes } from './core-routes.js';
 import { registerProjectIconRoutes } from './project-icon-routes.js';
 import { registerScheduledTaskRoutes } from '../scheduled-tasks/routes.js';
@@ -313,6 +314,8 @@ export const createFeatureRoutesRuntime = (dependencies) => {
       buildOpenCodeUrl,
       getOpenCodeAuthHeaders,
     });
+
+    registerReferenceRoutes(app, { resolveOptionalProjectDirectory });
 
     registerConfigEntityRoutes(app, {
       resolveProjectDirectory,

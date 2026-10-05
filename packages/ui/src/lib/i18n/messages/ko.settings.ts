@@ -3,7 +3,9 @@ import { guestIntegrationsI18n } from './guest-integrations.i18n';
 import { linearIntegrationI18n } from './linear-integration.i18n';
 import { thirdPartyIntegrationI18n } from './third-party-integrations.i18n';
 import { extensionCatalogI18n } from './extension-catalog.i18n';
+import { referencesSettingsI18n } from './references.settings.i18n';
 export const settingsDict = {
+  ...referencesSettingsI18n.ko,
   'settings.sourceControl.ssh.title': 'SSH 키',
   'settings.sourceControl.ssh.load': '키 보기',
   'settings.sourceControl.ssh.discover': '~/.ssh에서 키 찾기',

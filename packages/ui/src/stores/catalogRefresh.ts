@@ -110,6 +110,7 @@ export function catalogRefreshTasks(kind: CatalogKind): Array<() => Promise<void
     // Projects are the sync layer's own slice; nothing in Settings reads them
     // through these stores.
     case "project":
+    case "reference":
       return [];
     case "websearch":
       return [refreshWebSearchIfLoaded];

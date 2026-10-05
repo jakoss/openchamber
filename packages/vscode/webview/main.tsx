@@ -770,6 +770,17 @@ const handleLocalApiRequest = async (input: RequestInfo | URL, url: URL, init: R
     }
   }
 
+  if (pathname === '/api/config/references') {
+    const body = method === 'GET' ? {} : await extractJsonBody(input, init, method);
+    const directory = getRequestDirectoryHint(url, input, init);
+    try {
+      const data = await sendBridgeMessage('api:config/references', { ...body, method, directory });
+      return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    } catch {
+      return new Response(JSON.stringify({ error: 'Reference configuration request failed' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    }
+  }
+
   if (pathname === '/api/config/mcp') {
     const verb = method;
     const body = await extractJsonBody(input, init, method);

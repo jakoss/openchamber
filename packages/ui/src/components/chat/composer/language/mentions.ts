@@ -144,6 +144,8 @@ export function scanMentions(
 export type MentionKind = 'agent' | 'file';
 
 export interface MentionClassifier {
+    /** Root aliases from the current directory's authoritative reference list. */
+    knownReferenceNames?: ReadonlySet<string>;
     /** Lowercased names of the agents that can be mentioned. */
     knownAgentNames: ReadonlySet<string>;
     /** Mention paths confirmed by the picker, a drop, or a restored draft. */
@@ -164,6 +166,7 @@ export function classifyMention(
     // interpret CSS syntax such as `@import</style>` as a local file path.
     if (name.includes('<') || name.includes('>')) return null;
     if (classifier.knownAgentNames.has(name.toLowerCase())) return 'agent';
+    if (classifier.knownReferenceNames?.has(name)) return 'file';
     if (looksLikeFilePath(name, classifier.confirmedMentions)) return 'file';
     return null;
 }

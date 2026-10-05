@@ -107,6 +107,7 @@ const MOBILE_SETTINGS_PAGES = [
   'commands',
   'mcp',
   'plugins',
+  'references',
   'skills.installed',
   'skills.catalog',
   'providers',

@@ -53,6 +53,7 @@ import {
   type PermissionReply,
   type PermissionRequest,
   type Project,
+  type Reference,
   type Provider,
   type Session,
   type SessionStatus,
@@ -1996,6 +1997,16 @@ class OpencodeService {
   }
 
   /** Fuzzy file search inside a directory through OpenCode's file index. */
+  async listReferences(directory: string): Promise<Reference[]> {
+    const response = await call('reference.list', () => this.clientFor(directory).reference.list());
+    return response.data.map((entry) => ({
+      name: entry.name, path: entry.path, description: entry.description, hidden: entry.hidden,
+      source: entry.source.type === 'local'
+        ? { type: 'local', path: entry.source.path }
+        : { type: 'git', repository: entry.source.repository, branch: entry.source.branch },
+    }));
+  }
+
   async searchFiles(
     query: string,
     options?: {

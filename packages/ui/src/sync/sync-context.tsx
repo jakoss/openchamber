@@ -74,6 +74,7 @@ import {
 } from "./vscode-permission-auto-accept"
 import { markConfigCatalogStale, useConfigStore } from "@/stores/useConfigStore"
 import { refreshStoresForCatalogKind } from "@/stores/catalogRefresh"
+import { notifyReferenceChanges } from '@/lib/references'
 import { useMcpStore } from "@/stores/useMcpStore"
 import { resolveGlobalSessionDirectory, useGlobalSessionsStore } from "@/stores/useGlobalSessionsStore"
 import { spaceIdOfDirectory } from "@/lib/spaces/space-route"
@@ -1543,6 +1544,9 @@ async function reloadCatalog(
   // Before anything re-reads: a fresh GET must not be served the config the
   // client cached seconds ago.
   if (kind === "config") opencodeClient.clearConfigCache()
+  if (kind === 'config' || kind === 'reference') {
+    for (const directory of directories) notifyReferenceChanges(directory)
+  }
 
   void refreshStoresForCatalogKind(kind)
 

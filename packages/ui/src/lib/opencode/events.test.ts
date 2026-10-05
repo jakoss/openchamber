@@ -8,6 +8,11 @@ const base = { id: "evt_1", created: 1000, location: { directory: "/repo" } }
 const durable = { aggregateID: "ses_1", seq: 1, version: 1 as const }
 
 describe("translateWireEvent", () => {
+  test('reference updates refresh only the reference catalog', () => {
+    expect(translateWireEvent({ ...base, type: 'reference.updated', data: {} })).toEqual([
+      { type: 'catalog.updated', properties: { kind: 'reference' } },
+    ]);
+  });
   test("session.created becomes a full session with zeroed usage", () => {
     const [event] = translateWireEvent({
       ...base,

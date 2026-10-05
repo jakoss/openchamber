@@ -56,9 +56,11 @@ import {
   setWebSearchSelection,
   setWarmingEnabled,
   getWebSearchSource,
+  referenceConfigManager,
   type SnippetScope,
 } from './opencodeConfig';
 import { parseWebSearchSelection } from './opencode-config-v2';
+import { referenceRequestSchema } from '../../web/server/lib/opencode/reference-config.js';
 import {
   getSkillsCatalog,
   scanSkillsRepository as scanSkillsRepositoryFromGit,
@@ -424,6 +426,17 @@ export async function handleConfigBridgeMessage(
       }
       const result = setWarmingEnabled(enabled);
       return { id, type, success: true, data: { success: true, changed: result.changed } };
+    }
+
+    case 'api:config/references': {
+      const request = referenceRequestSchema.safeParse(payload);
+      if (!request.success) return { id, type, success: false, error: 'Invalid reference request' };
+      try {
+        const data = referenceConfigManager.execute(request.data);
+        return { id, type, success: true, data };
+      } catch {
+        return { id, type, success: false, error: 'Could not update references. Check the alias, source, branch and configuration file.' };
+      }
     }
 
     case 'api:config/mcp': {

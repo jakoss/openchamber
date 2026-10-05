@@ -5,6 +5,15 @@ import { createTunnelAuth } from './tunnel-auth.js';
 import { registerAuthAndAccessRoutes, registerCommonRequestMiddleware, registerServerStatusRoutes } from './core-routes.js';
 
 describe('core-routes', () => {
+  it('parses reference mutation JSON through the production request middleware', async () => {
+    const app = express();
+    registerCommonRequestMiddleware(app, { express });
+    app.all('/api/config/references', (req, res) => res.json(req.body));
+    const body = { scope: 'user', name: 'docs', config: { path: './docs' } };
+    for (const method of ['post', 'patch', 'delete']) {
+      await request(app)[method]('/api/config/references').send(body).expect(200, body);
+    }
+  });
   afterEach(() => {
     vi.useRealTimers();
   });

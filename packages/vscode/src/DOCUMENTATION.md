@@ -87,6 +87,7 @@ The webview build emits each worker as one self-contained file. VS Code webviews
   - OpenCode 2.x has one global stream, `GET /api/event`. Every frame names its own `location.directory`, so the proxy no longer scopes the request to a directory.
 
 - `bridge-config-runtime.ts`
+  - Reference GET/POST/PATCH/DELETE uses the shared `web/server/lib/opencode/reference-config.js` manager through `opencodeConfig.ts`. The webview intercepts `/api/config/references` and sends `api:config/references`; host JSONC IO preserves the same scoped targets and source ownership as the web server. Directory browsing continues through the existing FilesAPI bridge, so it addresses the extension host rather than the UI device.
   - Config and skills message handlers (`api:config/*`).
   - Includes OpenCode resolution diagnostics parity handler used by shared UI (`/api/config/opencode-resolution`).
   - OpenCode JSONC reads in `opencodeConfig.ts` fail closed on a partial or non-object `jsonc-parser` tree (`INVALID_JSONC`) so mutations cannot rewrite a `$schema`-only stub over an existing config. Comment-only files read as empty, while other content that yields no JSON value (YAML, plain text) fails closed. A broken layer is omitted from the merge and recorded on `layerErrors`; valid sibling layers still load, including plugin list/read via `getPluginConfigSources`. Writes still refuse to overwrite the broken file.

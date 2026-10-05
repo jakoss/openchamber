@@ -110,6 +110,29 @@ carries `data-floating-panel` while any frame is mounted so the recap hint
 hides instead of landing over the transcript. Unmounting clears the offset
 and the marker; resizing or collapsing the frame updates it.
 
+## Reference mentions
+
+`useReferences` reads the composer's directory through `opencodeClient` and
+retains its last successful list on refresh failure. Runtime or directory
+changes hide the old list and reject old request completions. Mounted consumers
+refresh on scoped reference/config notifications; no request walks every
+project. Hidden references stay out of autocomplete but can be mentioned by
+name. Known agents take precedence over reference aliases. Reference roots
+become `file://` directory attachments and pass through the existing draft and
+queue attachment paths. Their IDs differ from guessed file mentions, so file
+existence filtering does not discard an authoritative root alias.
+
+Typing `@alias/` switches autocomplete from project search to the connected
+host's `FilesAPI.listDirectory`. Each debounced query lists only its parent
+directory inside the reference and filters the final segment. Selecting a
+reference directory inserts its trailing slash without closing autocomplete;
+selecting a file inserts the alias-qualified path. Typed and selected subpaths
+resolve against the reference root for attachment submission. Traversal segments
+are rejected. Results belong to the current runtime, composer directory,
+reference root and query; old completions cannot populate a different owner.
+This path does not initialize an OpenCode location at the reference directory
+or recursively scan its checkout.
+
 ## Floating composer
 
 In a normal session view the composer slot is an absolute layer over the

@@ -13,6 +13,7 @@
  */
 
 import React from 'react';
+import type { Reference } from '@/lib/opencode/model';
 
 import { CommandAutocomplete, type CommandAutocompleteHandle, type CommandInfo } from '../../CommandAutocomplete';
 import { FileMentionAutocomplete, type FileMentionHandle } from '../../FileMentionAutocomplete';
@@ -56,6 +57,7 @@ function caretStyle(
 }
 
 export interface ComposerAutocompletePopupsProps {
+    references: readonly Reference[];
     /** Which picker is open, if any. */
     open: AutocompleteKind | null;
     query: string;
@@ -116,6 +118,7 @@ export function ComposerAutocompletePopups(props: ComposerAutocompletePopupsProp
                     ref={props.mentionRef}
                     searchQuery={query}
                     onFileSelect={props.onFileSelect}
+                    references={props.references}
                     onAgentSelect={props.onAgentSelect}
                     onClose={onClose}
                     style={style}

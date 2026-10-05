@@ -1,4 +1,5 @@
 import React from 'react';
+import { useReferences } from '@/hooks/useReferences';
 import { formatChangeRequestReference } from '@/lib/source-control/identity';
 import { ComposerDictation } from '@/components/dictation/ComposerDictation';
 // sessionStore removed — currentSessionId comes from useSessionUIStore
@@ -144,6 +145,7 @@ import {
     classifyMention,
     scanMentions,
 } from './composer/language/mentions';
+import { resolveReferenceMention } from './fileMentionResults';
 import { collectKnownTokenNames } from './composer/language/prefixTokens';
 import { resolveAutocompleteTrigger, type AutocompleteKind } from './composer/language/triggers';
 import { type ComposerLanguageContext } from './composer/language/tokenize';
@@ -631,6 +633,8 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
     ), [cycleAgentShortcutOverride]);
     const { currentTheme } = useThemeSystem();
     const chatSearchDirectory = useChatSearchDirectory();
+    const references = useReferences(chatSearchDirectory);
+    const knownReferenceNames = React.useMemo(() => new Set(references.map((reference) => reference.name)), [references]);
     const ensureGitStatus = useGitStore((state) => state.ensureStatus);
     const fetchGitStatus = useGitStore((state) => state.fetchStatus);
     const clearGitDiffCache = useGitStore((state) => state.clearDiffCache);
@@ -844,11 +848,12 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
     const languageContext = React.useMemo<ComposerLanguageContext>(() => ({
         inputMode,
         knownAgentNames,
+        knownReferenceNames,
         confirmedMentions: confirmedMentionsRef.current,
         knownSlashNames: knownSlashNamesWithGuests,
         knownSnippetTriggers,
         attachmentFilenames,
-    }), [attachmentFilenames, inputMode, knownAgentNames, knownSlashNamesWithGuests, knownSnippetTriggers]);
+    }), [attachmentFilenames, inputMode, knownAgentNames, knownReferenceNames, knownSlashNamesWithGuests, knownSnippetTriggers]);
 
     const sanitizeAttachmentsForSend = React.useCallback(
         (files: readonly AttachedFile[] | undefined): AttachedFile[] => [...(files ?? [])]
@@ -861,11 +866,19 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
         [],
     );
 
-    const resolveInlineFileMention = React.useCallback((mentionPath: string): { serverPath: string; filename: string } | null => {
+    const resolveInlineFileMention = React.useCallback((mentionPath: string): { serverPath: string; filename: string; reference?: boolean } | null => {
         const kind = classifyMention(mentionPath, {
             knownAgentNames: knownAgentNamesRef.current,
             confirmedMentions: confirmedMentionsRef.current,
         });
+        if (kind === 'agent') return null;
+        const reference = resolveReferenceMention(mentionPath, references);
+        if (reference) return {
+            serverPath: reference.serverPath,
+            filename: reference.subpath.split('/').filter(Boolean).pop() || reference.reference.name,
+            reference: true,
+        };
+        if (references.some((entry) => entry.name === mentionPath.replace(/\\/g, '/').split('/')[0])) return null;
         if (kind !== 'file') return null;
 
         const normalizedMentionPath = mentionPath.replace(/\\/g, '/').replace(/^\.\//, '').replace(/^\/+/, '');
@@ -885,7 +898,7 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
             serverPath: serverPath.replace(/\/+/g, '/'),
             filename: normalizedMentionPath.split('/').filter(Boolean).pop() || normalizedMentionPath,
         };
-    }, [chatSearchDirectory]);
+    }, [chatSearchDirectory, references]);
 
     const extractInlineFileMentions = React.useCallback((
         rawText: string,
@@ -909,7 +922,7 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
                 continue;
             }
             attachments.push({
-                id: `${INLINE_SERVER_ATTACHMENT_ID_PREFIX}${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+                id: `${mention.reference ? 'inline-reference-' : INLINE_SERVER_ATTACHMENT_ID_PREFIX}${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
                 file: new File([], mention.filename, { type: 'text/plain' }),
                 filename: mention.filename,
                 mimeType: 'text/plain',
@@ -2965,15 +2978,17 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
             ? file.relativePath.trim()
             : (toMentionPath(file.path) || file.name);
 
-        confirmedMentionsRef.current.add(mentionPath);
+        const browsingReference = mentionPath.endsWith('/') && resolveReferenceMention(mentionPath, references) !== null;
+        const suffix = browsingReference ? '' : ' ';
+        if (!browsingReference) confirmedMentionsRef.current.add(mentionPath);
 
         if (lastAtSymbol !== -1) {
             const newMessage =
                 message.substring(0, lastAtSymbol) +
-                `@${mentionPath} ` +
+                `@${mentionPath}${suffix}` +
                 message.substring(cursorPosition);
             setMessage(newMessage);
-            const nextCursor = lastAtSymbol + mentionPath.length + 2;
+            const nextCursor = lastAtSymbol + mentionPath.length + 1 + suffix.length;
             requestAnimationFrame(() => {
                 if (composerRef.current) {
                     composerRef.current.setSelection(nextCursor);
@@ -2983,10 +2998,10 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
         } else if (composerRef.current) {
             const newMessage =
                 message.substring(0, cursorPosition) +
-                `@${mentionPath} ` +
+                `@${mentionPath}${suffix}` +
                 message.substring(cursorPosition);
             setMessage(newMessage);
-            const nextCursor = cursorPosition + mentionPath.length + 2;
+            const nextCursor = cursorPosition + mentionPath.length + 1 + suffix.length;
             requestAnimationFrame(() => {
                 if (composerRef.current) {
                     composerRef.current.setSelection(nextCursor);
@@ -2995,7 +3010,7 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
             });
         }
 
-        closeAutocomplete();
+        if (!browsingReference) closeAutocomplete();
 
         composerRef.current?.focus();
     };
@@ -4028,6 +4043,7 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
                         onSkillSelect={handleSkillSelect}
                         onSnippetSelect={handleSnippetSelect}
                         onFileSelect={handleFileSelect}
+                        references={references}
                         onAgentSelect={handleAgentSelect}
                         onClose={closeAutocomplete}
                     />

@@ -1,5 +1,47 @@
 import { scoreByFuzzyQuery } from '@/lib/search/fuzzySearch';
 import type { ProjectFileSearchHit } from '@/lib/opencode/client';
+import type { Reference } from '@/lib/opencode/model';
+import type { FilesAPI } from '@/lib/api/types';
+
+export function resolveReferenceMention(mention: string, references: readonly Reference[]) {
+  const normalized = mention.replace(/\\/g, '/');
+  const slash = normalized.indexOf('/');
+  const alias = slash < 0 ? normalized : normalized.slice(0, slash);
+  const reference = references.find((entry) => entry.name === alias);
+  if (!reference) return null;
+  const subpath = slash < 0 ? '' : normalized.slice(slash + 1);
+  if (subpath.split('/').some((part) => part === '..' || part === '.' || part.includes(':'))) return null;
+  const root = reference.path.replace(/\\/g, '/').replace(/\/+$/, '');
+  return { reference, subpath, serverPath: subpath ? `${root}/${subpath}` : root };
+}
+
+export async function listReferenceMentionHits(
+  mention: string,
+  references: readonly Reference[],
+  files: Pick<FilesAPI, 'listDirectory'>,
+  options: { includeHidden: boolean; respectGitignore: boolean },
+): Promise<FileMentionHit[]> {
+  const resolved = resolveReferenceMention(mention, references);
+  if (!resolved) return [];
+  const slash = resolved.subpath.lastIndexOf('/');
+  const parent = slash < 0 ? '' : resolved.subpath.slice(0, slash + 1);
+  const query = resolved.subpath.slice(slash + 1);
+  const root = resolved.reference.path.replace(/\\/g, '/').replace(/\/+$/, '');
+  const listing = await files.listDirectory(`${root}/${parent}`, { respectGitignore: options.respectGitignore });
+  const hits = listing.entries
+    .filter((entry) => options.includeHidden || !entry.name.startsWith('.'))
+    .map((entry) => ({
+      name: entry.name,
+      path: entry.path,
+      relativePath: entry.name,
+      kind: entry.isDirectory ? 'directory' as const : 'file' as const,
+    }));
+  return rankFileMentionResults(
+    hits.filter((hit) => hit.kind === 'file'),
+    hits.filter((hit) => hit.kind === 'directory'),
+    query,
+  ).map((hit) => ({ ...hit, relativePath: `${resolved.reference.name}/${parent}${hit.name}${hit.kind === 'directory' ? '/' : ''}` }));
+}
 
 export type FileMentionHit = ProjectFileSearchHit & { kind: 'file' | 'directory' };
 
@@ -68,4 +110,3 @@ export function filterStaleRecentFiles<T extends { path: string }>(
   }
   return files.filter((file) => !stalePaths.has(file.path));
 }
-

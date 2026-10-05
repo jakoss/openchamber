@@ -29,5 +29,11 @@
       "command": ["docker-langserver", "--stdio"],
       "extensions": ["Dockerfile", ".dockerfile"]
     }
+  },
+  "references": {
+	  "opencode": {
+		  "repository": "anomalyco/opencode",
+		  "branch" : "v2"
+	  }
   }
 }
